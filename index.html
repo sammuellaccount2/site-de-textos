@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>🌸 para Bianca · nosso império</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Dancing+Script:wght@400;600&family=Quicksand:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 🔐 TELA DE SENHA (sobrepõe tudo) -->
+<div id="passwordOverlay">
+  <div class="password-card">
+    <h2>🌸 Nosso segredo</h2>
+    <p style="margin-bottom: 1.5rem; font-style: italic; opacity: 0.8;">Só você e eu sabemos...</p>
+    <input type="password" id="passwordInput" placeholder="digite a senha" autocomplete="off">
+    <button id="submitPasswordBtn">Entrar no império</button>
+    <div id="passwordError" style="color: #b15e5e; margin-top: 12px; min-height: 24px;"></div>
+    <div style="margin-top: 20px; font-size: 0.8rem; opacity: 0.5;">✨ feito com amor ✨</div>
+  </div>
+</div>
+
+<!-- 🌸 TELA INICIAL ROMÂNTICA (só aparece depois da senha) -->
+<div id="welcomeOverlay" style="display: none;">
+  <div class="welcome-card">
+    <h1>✨ para Bianca ✨</h1>
+    <div class="sub-phrase">
+      “Um lugar onde cada palavra<br> tem você dentro”
+    </div>
+    <button class="enter-btn" id="enterBtn">🌷 Entrar · ler algo para você</button>
+    <div style="margin-top: 20px; font-size: 0.9rem; opacity: 0.5; font-style: italic;">feito com carinho</div>
+  </div>
+</div>
+
+<!-- APLICATIVO PRINCIPAL -->
+<div id="app" style="display: none;">
+  <header class="app-header">
+    <h2>
+      <span>💌</span> diário de nós <span>🌿</span>
+      <span id="cartasCount" class="count-badge">0</span>
+    </h2>
+    <button class="write-toggle-btn" id="toggleWriteBtn" aria-label="Escrever nova carta" disabled>
+      <span style="font-size:1.4rem;">✎</span> Escrever
+    </button>
+  </header>
+
+  <!-- Seção de escrita -->
+  <section id="writeSection" style="display: none;">
+    <div class="write-form">
+      <label for="letterTitle">📝 título (opcional)</label>
+      <input type="text" id="letterTitle" placeholder="ex: manhã de domingo..." maxlength="40">
+
+      <label for="letterMessage">💬 sua mensagem</label>
+      <textarea id="letterMessage" placeholder="escreva aqui o que seu coração quiser dizer à Bianca..."></textarea>
+
+      <div class="form-actions">
+        <button type="button" id="cancelWriteBtn">Cancelar</button>
+        <button type="button" class="save-btn" id="saveLetterBtn">🌸 Salvar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Container das cartas -->
+  <div id="lettersContainer" class="letters-feed">
+    <div class="empty-message">🌸 Carregando nosso império...</div>
+  </div>
+
+  <footer class="app-footer">
+    <span>🌹 cada linha é um pedacinho de nós 🌹</span>
+  </footer>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<!-- Nosso script mágico -->
+<script src="script.js"></script>
+</body>
+</html>
