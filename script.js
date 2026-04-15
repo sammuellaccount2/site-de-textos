@@ -17,7 +17,7 @@ const SENHA_SECRETA = "8141722";
 (function() {
   "use strict";
 
-  // Elementos DOM
+  // ===== ELEMENTOS DOM =====
   const passwordOverlay = document.getElementById('passwordOverlay');
   const passwordInput = document.getElementById('passwordInput');
   const submitPasswordBtn = document.getElementById('submitPasswordBtn');
@@ -32,6 +32,7 @@ const SENHA_SECRETA = "8141722";
   const letterTitleInput = document.getElementById('letterTitle');
   const letterMessageInput = document.getElementById('letterMessage');
   const cartasCountSpan = document.getElementById('cartasCount');
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
 
   const bilhetesView = document.getElementById('bilhetesView');
   const cartasView = document.getElementById('cartasView');
@@ -46,7 +47,7 @@ const SENHA_SECRETA = "8141722";
   const closeModalBtn = document.getElementById('closeModalBtn');
   const modalDeleteBtn = document.getElementById('modalDeleteBtn');
 
-  // Estado
+  // ===== ESTADO =====
   let bilhetes = [];
   let cartas = [];
   let unsubscribeBilhetes = null;
@@ -55,7 +56,32 @@ const SENHA_SECRETA = "8141722";
   let currentTab = 'bilhetes';
   let currentModalId = null;
 
-  // Verificação de senha
+  // ===== MODO DIA/NOITE =====
+  function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.body.classList.remove('light-mode', 'dark-mode');
+    document.body.classList.add(savedTheme + '-mode');
+    updateThemeIcon(savedTheme);
+  }
+
+  function toggleTheme() {
+    const isLight = document.body.classList.contains('light-mode');
+    const newTheme = isLight ? 'dark' : 'light';
+    document.body.classList.remove('light-mode', 'dark-mode');
+    document.body.classList.add(newTheme + '-mode');
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon(newTheme);
+  }
+
+  function updateThemeIcon(theme) {
+    const icon = themeToggleBtn.querySelector('.theme-icon');
+    if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
+  }
+
+  themeToggleBtn.addEventListener('click', toggleTheme);
+  initTheme();
+
+  // ===== VERIFICAÇÃO DE SENHA =====
   function verificarSenha() {
     if (passwordInput.value.trim() === SENHA_SECRETA) {
       senhaCorreta = true;
@@ -69,12 +95,13 @@ const SENHA_SECRETA = "8141722";
       passwordInput.focus();
     }
   }
+
   submitPasswordBtn.addEventListener('click', verificarSenha);
   passwordInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') verificarSenha();
   });
 
-  // Escutar coleções separadas
+  // ===== FIREBASE: ESCUTAR COLEÇÕES =====
   function escutarDados() {
     if (unsubscribeBilhetes) unsubscribeBilhetes();
     if (unsubscribeCartas) unsubscribeCartas();
@@ -99,7 +126,7 @@ const SENHA_SECRETA = "8141722";
     cartasCountSpan.textContent = total;
   }
 
-  // Renderiza bilhetes (completo)
+  // ===== RENDERIZAR BILHETES =====
   function renderizarBilhetes() {
     if (bilhetes.length === 0) {
       bilhetesContainer.innerHTML = '<div class="empty-message">🌱 nenhum bilhete ainda<br>escreva o primeiro</div>';
@@ -124,7 +151,7 @@ const SENHA_SECRETA = "8141722";
     });
   }
 
-  // Renderiza lista de cartas (apenas títulos)
+  // ===== RENDERIZAR CARTAS =====
   function renderizarCartasLista() {
     if (cartas.length === 0) {
       cartasListContainer.innerHTML = '<div class="empty-message">📭 nenhuma carta ainda</div>';
@@ -135,8 +162,10 @@ const SENHA_SECRETA = "8141722";
       const titulo = item.titulo || 'carta sem título';
       const data = new Date(item.dataISO).toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
       html += `<div class="carta-item" data-id="${item.id}">
-        <span class="carta-item-title">${escapeHtml(titulo)}</span>
-        <span class="carta-item-date">${data}</span>
+        <div class="carta-item-content">
+          <span class="carta-item-title">${escapeHtml(titulo)}</span>
+          <span class="carta-item-date">${data}</span>
+        </div>
       </div>`;
     });
     cartasListContainer.innerHTML = html;
@@ -145,6 +174,7 @@ const SENHA_SECRETA = "8141722";
     });
   }
 
+  // ===== MODAL CARTA =====
   function abrirModal(id) {
     const carta = cartas.find(c => c.id === id);
     if (!carta) return;
@@ -159,6 +189,7 @@ const SENHA_SECRETA = "8141722";
     modal.style.display = 'none';
     currentModalId = null;
   }
+
   closeModalBtn.addEventListener('click', fecharModal);
   modal.addEventListener('click', (e) => {
     if (e.target === modal) fecharModal();
@@ -175,20 +206,19 @@ const SENHA_SECRETA = "8141722";
     }
   });
 
+  // ===== EXCLUIR ITEM =====
   async function excluirItem(id, tipo) {
     if (!senhaCorreta) return;
     if (!confirm(`apagar este ${tipo}?`)) return;
     try {
-      if (tipo === 'bilhete') {
-        await bilhetesRef.doc(id).delete();
-      } else {
-        await cartasRef.doc(id).delete();
-      }
+      if (tipo === 'bilhete') await bilhetesRef.doc(id).delete();
+      else await cartasRef.doc(id).delete();
     } catch (e) {
       alert("não foi possível apagar.");
     }
   }
 
+  // ===== ADICIONAR ITEM =====
   async function adicionarItem(titulo, mensagem) {
     if (!senhaCorreta) return false;
     if (!mensagem.trim()) {
@@ -211,28 +241,37 @@ const SENHA_SECRETA = "8141722";
     }
   }
 
+  // ===== UTILITÁRIOS =====
   function escapeHtml(t) {
-    return String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+    if (!t) return '';
+    return String(t)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
+  // ===== CONTROLE DE ESCRITA =====
   function alternarEscrita(mostrar) {
     if (!senhaCorreta) return;
-    writeSection.style.display = (mostrar === undefined) ? (writeSection.style.display === 'none' ? 'block' : 'none') : (mostrar ? 'block' : 'none');
+    writeSection.style.display = (mostrar === undefined) 
+      ? (writeSection.style.display === 'none' ? 'block' : 'none') 
+      : (mostrar ? 'block' : 'none');
     if (writeSection.style.display === 'block') letterMessageInput.focus();
   }
 
+  // ===== TROCA DE ABAS =====
   function switchTab(tabId) {
     currentTab = tabId;
     tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
     bilhetesView.style.display = tabId === 'bilhetes' ? 'block' : 'none';
     cartasView.style.display = tabId === 'cartas' ? 'block' : 'none';
-    if (writeSection.style.display === 'block') {
-      // Opcional: poderia limpar ou manter
-    }
   }
 
   tabBtns.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
+  // ===== EVENTOS =====
   enterBtn.addEventListener('click', () => {
     welcomeOverlay.style.opacity = '0';
     welcomeOverlay.style.visibility = 'hidden';
@@ -240,6 +279,7 @@ const SENHA_SECRETA = "8141722";
   });
 
   toggleWriteBtn.addEventListener('click', () => alternarEscrita());
+
   cancelWriteBtn.addEventListener('click', () => {
     alternarEscrita(false);
     letterTitleInput.value = '';
@@ -247,8 +287,9 @@ const SENHA_SECRETA = "8141722";
   });
 
   saveLetterBtn.addEventListener('click', async () => {
-    if (await adicionarItem(letterTitleInput.value, letterMessageInput.value))
+    if (await adicionarItem(letterTitleInput.value, letterMessageInput.value)) {
       alternarEscrita(false);
+    }
   });
 
   letterMessageInput.addEventListener('keydown', (e) => {
@@ -258,32 +299,72 @@ const SENHA_SECRETA = "8141722";
     }
   });
 
-  // Migração única: se houver dados na coleção antiga "cartas" e "bilhetes" estiver vazia, copia para bilhetes
+  // ===== MIGRAÇÃO DE DADOS ANTIGOS =====
   async function migrarDadosAntigos() {
-    const snapshot = await db.collection("cartas").get();
-    if (!snapshot.empty) {
-      const bilhetesSnapshot = await bilhetesRef.get();
-      if (bilhetesSnapshot.empty) {
-        const batch = db.batch();
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          batch.set(bilhetesRef.doc(), {
-            texto: data.texto || "",
-            titulo: data.titulo || "",
-            dataISO: data.dataISO || new Date().toISOString()
+    try {
+      const snapshotAntigo = await db.collection("cartas").get();
+      if (!snapshotAntigo.empty) {
+        const bilhetesSnapshot = await bilhetesRef.get();
+        if (bilhetesSnapshot.empty) {
+          const batch = db.batch();
+          snapshotAntigo.forEach(doc => {
+            const data = doc.data();
+            batch.set(bilhetesRef.doc(), {
+              texto: data.texto || "",
+              titulo: data.titulo || "",
+              dataISO: data.dataISO || new Date().toISOString()
+            });
           });
-        });
-        await batch.commit();
-        console.log("Dados migrados para bilhetes.");
+          await batch.commit();
+          console.log("✅ Dados migrados da coleção antiga para 'bilhetes'.");
+        }
       }
+    } catch (e) {
+      console.warn("ℹ️ Nenhum dado antigo para migrar ou erro:", e);
     }
   }
 
-  // Inicialização
+  // ===== INICIALIZAÇÃO =====
   function init() {
-    // Tenta migrar dados antigos (caso existam)
-    migrarDadosAntigos().catch(e => console.warn("Migração ignorada:", e));
+    migrarDadosAntigos();
   }
 
   init();
+  // ===== CORAÇÕES FLUTUANTES =====
+  function criarCoracoesFlutuantes() {
+    const container = document.createElement('div');
+    container.className = 'floating-hearts';
+    document.body.appendChild(container);
+    
+    const numCoracoes = 12;
+    
+    for (let i = 0; i < numCoracoes; i++) {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.textContent = '❤️';
+      
+      const left = Math.random() * 100;
+      const delay = Math.random() * 20;
+      const duration = 20 + Math.random() * 15;
+      
+      heart.style.left = left + '%';
+      heart.style.animationDelay = '-' + delay + 's';
+      heart.style.animationDuration = duration + 's';
+      
+      container.appendChild(heart);
+    }
+  }
+  
+  // Chamar após o login
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.target.id === 'app' && window.getComputedStyle(app).display === 'block') {
+        if (!document.querySelector('.floating-hearts')) {
+          criarCoracoesFlutuantes();
+        }
+      }
+    });
+  });
+  
+  observer.observe(app, { attributes: true, attributeFilter: ['style'] });
 })();
