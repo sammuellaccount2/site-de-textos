@@ -16,7 +16,7 @@ const db = firebase.firestore();
 const cartasRef = db.collection("cartas");
 
 // 🔐 SENHA SECRETA DO IMPÉRIO (troque aqui se quiser)
-const SENHA_SECRETA = "amoreterno";
+const SENHA_SECRETA = "8141722";
 
 // ========== LÓGICA DO SITE ==========
 (function(){
