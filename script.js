@@ -14,9 +14,9 @@ const cartasRef = db.collection("cartas");
 
 const SENHA_SECRETA = "8141722";
 
-(function() {
-  "use strict";
-
+// Espera o DOM carregar completamente
+document.addEventListener('DOMContentLoaded', function() {
+  
   // ===== ELEMENTOS DOM =====
   const passwordOverlay = document.getElementById('passwordOverlay');
   const passwordInput = document.getElementById('passwordInput');
@@ -78,28 +78,76 @@ const SENHA_SECRETA = "8141722";
     if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
   }
 
-  themeToggleBtn.addEventListener('click', toggleTheme);
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', toggleTheme);
+  }
   initTheme();
 
-  // ===== VERIFICAÇÃO DE SENHA =====
+  // ===== CORAÇÕES FLUTUANTES =====
+  function criarCoracoesFlutuantes() {
+    if (document.querySelector('.floating-hearts')) return;
+    
+    const container = document.createElement('div');
+    container.className = 'floating-hearts';
+    document.body.appendChild(container);
+    
+    const numCoracoes = 12;
+    
+    for (let i = 0; i < numCoracoes; i++) {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.textContent = '❤️';
+      
+      const left = Math.random() * 100;
+      const delay = Math.random() * 20;
+      const duration = 20 + Math.random() * 15;
+      
+      heart.style.left = left + '%';
+      heart.style.animationDelay = '-' + delay + 's';
+      heart.style.animationDuration = duration + 's';
+      
+      container.appendChild(heart);
+    }
+  }
+
+  // ===== VERIFICAÇÃO DE SENHA (CORRIGIDA) =====
   function verificarSenha() {
-    if (passwordInput.value.trim() === SENHA_SECRETA) {
+    const digitada = passwordInput.value.trim();
+    
+    // Debug no console
+    console.log("Tentando entrar com senha:", digitada);
+    
+    if (digitada === SENHA_SECRETA) {
+      console.log("✅ Senha correta! Abrindo...");
       senhaCorreta = true;
       passwordOverlay.style.display = 'none';
       welcomeOverlay.style.display = 'flex';
       toggleWriteBtn.disabled = false;
       escutarDados();
     } else {
+      console.log("❌ Senha incorreta");
       passwordError.textContent = 'senha incorreta, tente novamente';
       passwordInput.value = '';
       passwordInput.focus();
     }
   }
 
-  submitPasswordBtn.addEventListener('click', verificarSenha);
-  passwordInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') verificarSenha();
-  });
+  // Garantir que o botão funciona
+  if (submitPasswordBtn) {
+    submitPasswordBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      verificarSenha();
+    });
+  }
+  
+  if (passwordInput) {
+    passwordInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        verificarSenha();
+      }
+    });
+  }
 
   // ===== FIREBASE: ESCUTAR COLEÇÕES =====
   function escutarDados() {
@@ -111,6 +159,8 @@ const SENHA_SECRETA = "8141722";
       snapshot.forEach(doc => bilhetes.push({ id: doc.id, ...doc.data() }));
       renderizarBilhetes();
       atualizarContador();
+    }, (error) => {
+      console.error("Erro ao carregar bilhetes:", error);
     });
 
     unsubscribeCartas = cartasRef.orderBy("dataISO", "desc").onSnapshot((snapshot) => {
@@ -118,20 +168,27 @@ const SENHA_SECRETA = "8141722";
       snapshot.forEach(doc => cartas.push({ id: doc.id, ...doc.data() }));
       renderizarCartasLista();
       atualizarContador();
+    }, (error) => {
+      console.error("Erro ao carregar cartas:", error);
     });
   }
 
   function atualizarContador() {
-    const total = bilhetes.length + cartas.length;
-    cartasCountSpan.textContent = total;
+    if (cartasCountSpan) {
+      const total = bilhetes.length + cartas.length;
+      cartasCountSpan.textContent = total;
+    }
   }
 
   // ===== RENDERIZAR BILHETES =====
   function renderizarBilhetes() {
+    if (!bilhetesContainer) return;
+    
     if (bilhetes.length === 0) {
       bilhetesContainer.innerHTML = '<div class="empty-message">🌱 nenhum bilhete ainda<br>escreva o primeiro</div>';
       return;
     }
+    
     let html = '';
     bilhetes.forEach(item => {
       const titulo = item.titulo || 'bilhete';
@@ -142,7 +199,9 @@ const SENHA_SECRETA = "8141722";
         <div class="letter-footer"><span>✽</span><button class="delete-btn" data-id="${item.id}" data-tipo="bilhete">✕</button></div>
       </article>`;
     });
+    
     bilhetesContainer.innerHTML = html;
+    
     document.querySelectorAll('#bilhetesContainer .delete-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -153,10 +212,13 @@ const SENHA_SECRETA = "8141722";
 
   // ===== RENDERIZAR CARTAS =====
   function renderizarCartasLista() {
+    if (!cartasListContainer) return;
+    
     if (cartas.length === 0) {
       cartasListContainer.innerHTML = '<div class="empty-message">📭 nenhuma carta ainda</div>';
       return;
     }
+    
     let html = '';
     cartas.forEach(item => {
       const titulo = item.titulo || 'carta sem título';
@@ -168,7 +230,9 @@ const SENHA_SECRETA = "8141722";
         </div>
       </div>`;
     });
+    
     cartasListContainer.innerHTML = html;
+    
     document.querySelectorAll('.carta-item').forEach(item => {
       item.addEventListener('click', () => abrirModal(item.dataset.id));
     });
@@ -190,21 +254,28 @@ const SENHA_SECRETA = "8141722";
     currentModalId = null;
   }
 
-  closeModalBtn.addEventListener('click', fecharModal);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) fecharModal();
-  });
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', fecharModal);
+  }
+  
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) fecharModal();
+    });
+  }
 
-  modalDeleteBtn.addEventListener('click', async () => {
-    if (!currentModalId) return;
-    if (!confirm("apagar esta carta?")) return;
-    try {
-      await cartasRef.doc(currentModalId).delete();
-      fecharModal();
-    } catch (e) {
-      alert("não foi possível apagar.");
-    }
-  });
+  if (modalDeleteBtn) {
+    modalDeleteBtn.addEventListener('click', async () => {
+      if (!currentModalId) return;
+      if (!confirm("apagar esta carta?")) return;
+      try {
+        await cartasRef.doc(currentModalId).delete();
+        fecharModal();
+      } catch (e) {
+        alert("não foi possível apagar.");
+      }
+    });
+  }
 
   // ===== EXCLUIR ITEM =====
   async function excluirItem(id, tipo) {
@@ -272,32 +343,43 @@ const SENHA_SECRETA = "8141722";
   tabBtns.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
   // ===== EVENTOS =====
-  enterBtn.addEventListener('click', () => {
-    welcomeOverlay.style.opacity = '0';
-    welcomeOverlay.style.visibility = 'hidden';
-    app.style.display = 'block';
-  });
+  if (enterBtn) {
+    enterBtn.addEventListener('click', () => {
+      welcomeOverlay.style.opacity = '0';
+      welcomeOverlay.style.visibility = 'hidden';
+      app.style.display = 'block';
+      criarCoracoesFlutuantes();
+    });
+  }
 
-  toggleWriteBtn.addEventListener('click', () => alternarEscrita());
+  if (toggleWriteBtn) {
+    toggleWriteBtn.addEventListener('click', () => alternarEscrita());
+  }
 
-  cancelWriteBtn.addEventListener('click', () => {
-    alternarEscrita(false);
-    letterTitleInput.value = '';
-    letterMessageInput.value = '';
-  });
-
-  saveLetterBtn.addEventListener('click', async () => {
-    if (await adicionarItem(letterTitleInput.value, letterMessageInput.value)) {
+  if (cancelWriteBtn) {
+    cancelWriteBtn.addEventListener('click', () => {
       alternarEscrita(false);
-    }
-  });
+      letterTitleInput.value = '';
+      letterMessageInput.value = '';
+    });
+  }
 
-  letterMessageInput.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      saveLetterBtn.click();
-    }
-  });
+  if (saveLetterBtn) {
+    saveLetterBtn.addEventListener('click', async () => {
+      if (await adicionarItem(letterTitleInput.value, letterMessageInput.value)) {
+        alternarEscrita(false);
+      }
+    });
+  }
+
+  if (letterMessageInput) {
+    letterMessageInput.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        saveLetterBtn.click();
+      }
+    });
+  }
 
   // ===== MIGRAÇÃO DE DADOS ANTIGOS =====
   async function migrarDadosAntigos() {
@@ -316,55 +398,15 @@ const SENHA_SECRETA = "8141722";
             });
           });
           await batch.commit();
-          console.log("✅ Dados migrados da coleção antiga para 'bilhetes'.");
+          console.log("✅ Dados migrados para 'bilhetes'.");
         }
       }
     } catch (e) {
-      console.warn("ℹ️ Nenhum dado antigo para migrar ou erro:", e);
+      console.warn("ℹ️ Migração ignorada:", e);
     }
   }
 
   // ===== INICIALIZAÇÃO =====
-  function init() {
-    migrarDadosAntigos();
-  }
-
-  init();
-  // ===== CORAÇÕES FLUTUANTES =====
-  function criarCoracoesFlutuantes() {
-    const container = document.createElement('div');
-    container.className = 'floating-hearts';
-    document.body.appendChild(container);
-    
-    const numCoracoes = 12;
-    
-    for (let i = 0; i < numCoracoes; i++) {
-      const heart = document.createElement('div');
-      heart.className = 'heart';
-      heart.textContent = '❤️';
-      
-      const left = Math.random() * 100;
-      const delay = Math.random() * 20;
-      const duration = 20 + Math.random() * 15;
-      
-      heart.style.left = left + '%';
-      heart.style.animationDelay = '-' + delay + 's';
-      heart.style.animationDuration = duration + 's';
-      
-      container.appendChild(heart);
-    }
-  }
-  
-  // Chamar após o login
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.target.id === 'app' && window.getComputedStyle(app).display === 'block') {
-        if (!document.querySelector('.floating-hearts')) {
-          criarCoracoesFlutuantes();
-        }
-      }
-    });
-  });
-  
-  observer.observe(app, { attributes: true, attributeFilter: ['style'] });
-})();
+  migrarDadosAntigos();
+  console.log("✅ Site carregado! Aguardando senha...");
+});
